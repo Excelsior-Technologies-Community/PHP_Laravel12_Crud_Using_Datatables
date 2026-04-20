@@ -30,3 +30,13 @@ Route::get('/products/show/{id}', [ProductController::class, 'show'])->name('pro
 
 // Delete a product (soft delete)
 Route::delete('/products/delete/{id}', [ProductController::class, 'destroy'])->name('products.delete');
+
+
+//  Restore
+Route::post('/products/restore/{id}', [ProductController::class, 'restore']);
+
+//  Toggle status
+Route::post('/products/status/{id}', [ProductController::class, 'toggleStatus']);
+
+// export products to Excel
+Route::get('/products/export', [ProductController::class, 'export'])->name('products.export');
