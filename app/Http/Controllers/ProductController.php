@@ -6,136 +6,118 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExport;
+use Yajra\DataTables\DataTables;
 
 class ProductController extends Controller
 {
-    // INDEX (Datatable)
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $products = Product::withTrashed()->select('*'); // include deleted
+            $products = Product::withTrashed()->select('*');
 
-            return datatables()->of($products)
+            return Datatables::of($products)
                 ->addIndexColumn()
-
                 ->addColumn('status', function ($row) {
-                    return $row->status == 'active' ? 'Active' : 'Deleted';
-                })
-
-                ->addColumn('action', function ($row) {
-
-                    // If deleted → show restore button
                     if ($row->deleted_at) {
-                        return '
-                            <button class="btn btn-success btn-sm restore" 
-                                    data-id="' . $row->id . '">Restore</button>
-                        ';
+                        return '<span class="badge bg-danger">Deleted</span>';
                     }
-
+                    $checked = $row->status == 'active' ? 'checked' : '';
+                    return '<div class="form-check form-switch d-flex justify-content-center">
+                                <input class="form-check-input toggle-status" type="checkbox" data-id="'.$row->id.'" '.$checked.' style="cursor:pointer; width:40px; height:20px;">
+                            </div>';
+                })
+                ->addColumn('action', function ($row) {
+                    if ($row->deleted_at) {
+                        return '<button class="btn btn-success btn-sm restore-btn" data-id="' . $row->id . '">Restore</button>';
+                    }
                     return '
-                        <a href="' . route('products.show', $row->id) . '" 
-                           class="btn btn-info btn-sm me-1">Show</a>
-
-                        <a href="' . route('products.edit', $row->id) . '" 
-                           class="btn btn-primary btn-sm me-1">Edit</a>
-
-                        <button class="btn btn-warning btn-sm toggleStatus me-1" 
-                                data-id="' . $row->id . '">Toggle</button>
-
-                        <button class="btn btn-danger btn-sm delete" 
-                                data-id="' . $row->id . '">Delete</button>
+                        <div class="action-btns">
+                            <a href="' . route('products.show', $row->id) . '" class="btn btn-info btn-sm text-white">Show</a>
+                            <a href="' . route('products.edit', $row->id) . '" class="btn btn-primary btn-sm">Edit</a>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="' . $row->id . '">Delete</button>
+                        </div>
                     ';
                 })
-
-                ->rawColumns(['action'])
+                ->rawColumns(['status', 'action'])
                 ->make(true);
         }
 
         return view('products.index');
     }
 
-    // CREATE
+    public function searchSuggestions(Request $request)
+    {
+        $query = $request->get('query');
+        $products = Product::where('name', 'LIKE', "%{$query}%")
+            ->limit(5)
+            ->get(['id', 'name', 'price']);
+
+        return response()->json($products);
+    }
+
     public function create()
     {
         return view('products.create');
     }
 
-    // STORE
     public function store(Request $request)
     {
         Product::create($request->all());
         return redirect()->route('products.index')->with('success', 'Product Added');
     }
 
-    // EDIT
     public function edit($id)
     {
         $product = Product::find($id);
         return view('products.edit', compact('product'));
     }
 
-    // SHOW
     public function show($id)
     {
         $product = Product::withTrashed()->findOrFail($id);
         return view('products.show', compact('product'));
     }
 
-    // UPDATE
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-
-        // Only allow these values
         $status = $request->status;
         if (!in_array($status, ['active', 'deleted'])) {
-            $status = 'active'; // default fallback
+            $status = 'active';
         }
-
         $product->update([
             'name' => $request->name,
             'price' => $request->price,
             'description' => $request->description,
             'status' => $status,
         ]);
-
         return redirect()->route('products.index')->with('success', 'Product updated successfully');
     }
 
-    // DELETE (Soft Delete)
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-
         $product->status = 'deleted';
         $product->save();
-
         $product->delete();
-
-        return response()->json(['success' => 'Product deleted']);
+        return response()->json(['success' => true]);
     }
 
-    //  RESTORE
     public function restore($id)
     {
         $product = Product::withTrashed()->findOrFail($id);
-
         $product->restore();
         $product->status = 'active';
         $product->save();
-
-        return response()->json(['success' => 'Product restored']);
+        return response()->json(['success' => true]);
     }
 
-    //  TOGGLE STATUS
     public function toggleStatus($id)
     {
         $product = Product::findOrFail($id);
-
-        $product->status = $product->status == 'active' ? 'deleted' : 'active';
+        $product->status = $product->status == 'active' ? 'inactive' : 'active';
         $product->save();
-
-        return response()->json(['success' => 'Status updated']);
+        return response()->json(['success' => true]);
     }
 
     public function export()

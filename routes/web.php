@@ -40,3 +40,5 @@ Route::post('/products/status/{id}', [ProductController::class, 'toggleStatus'])
 
 // export products to Excel
 Route::get('/products/export', [ProductController::class, 'export'])->name('products.export');
+
+Route::get('/products/suggestions', [ProductController::class, 'searchSuggestions'])->name('products.suggestions');
