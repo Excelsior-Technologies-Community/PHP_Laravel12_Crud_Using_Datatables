@@ -1,51 +1,68 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>View Product</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <title>Product Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f5f5; }
+        .details-container { max-width: 600px; margin: 50px auto; }
+        .card { border-radius: 8px; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .detail-row { padding: 12px 0; border-bottom: 1px solid #eee; }
+        .detail-label { font-weight: 600; width: 120px; display: inline-block; }
+        .status-active { color: #155724; background: #d4edda; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+        .status-inactive { color: #721c24; background: #f8d7da; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+    </style>
 </head>
-
 <body>
 
-    <div class="container mt-4">
-        <div class="card shadow">
-            <!-- Card Header -->
-            <div class="card-header">
-                <h5>Product Details</h5>
+<div class="details-container">
+    <div class="card">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Product Details</h5>
+        </div>
+        <div class="card-body">
+            
+            <div class="detail-row">
+                <span class="detail-label">Product Name:</span>
+                <span>{{ $product->name }}</span>
             </div>
 
-            <!-- Card Body -->
-            <div class="card-body">
-                <!-- Product Name -->
-                <p><strong>Name:</strong> {{ $product->name }}</p>
-
-                <!-- Product Price -->
-                <p><strong>Price:</strong> ₹{{ $product->price }}</p>
-
-                <!-- Product Description -->
-                <p><strong>Description:</strong> {{ $product->description ?? '-' }}</p>
-
-                <!-- Product Status -->
-                <p>
-                    <strong>Status:</strong>
-                    <span class="badge {{ $product->status == 'active' ? 'bg-success' : 'bg-danger' }}">
-                        {{ $product->status == 'active' ? 'Active' : 'Inactive' }}
-                    </span>
-                </p>
-
-                <!-- Product Created Date -->
-                <p><strong>Created At:</strong> {{ $product->created_at->format('d M Y') }}</p>
+            <div class="detail-row">
+                <span class="detail-label">Price:</span>
+                <span>${{ number_format($product->price, 2) }}</span>
             </div>
 
-            <!-- Card Footer -->
-            <div class="card-footer">
-                <a href="{{ route('products.index') }}" class="btn btn-secondary">Back</a>
+            <div class="detail-row">
+                <span class="detail-label">Stock:</span>
+                <span>{{ $product->stock_quantity ?? 0 }} units</span>
             </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Description:</span>
+                <span>{{ $product->description ?? '-' }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Status:</span>
+                <span class="status-{{ $product->status }}">
+                    {{ ucfirst($product->status) }}
+                </span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Created:</span>
+                <span>{{ $product->created_at ? $product->created_at->format('d M Y, h:i A') : '-' }}</span>
+            </div>
+
+            <div class="mt-4">
+                <a href="{{ route('products.index') }}" class="btn btn-secondary">Back to List</a>
+                <a href="{{ route('products.edit', $product->id) }}" class="btn btn-primary">Edit Product</a>
+            </div>
+            
         </div>
     </div>
+</div>
 
 </body>
-
 </html>

@@ -5,24 +5,41 @@ namespace App\Exports;
 use App\Models\Product;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 
-class ProductsExport implements FromCollection, WithHeadings
+class ProductsExport implements FromCollection, WithHeadings, WithMapping
 {
-    // DATA
-    public function collection()
+    protected $columns;
+
+    public function __construct($columns = null)
     {
-        return Product::select('id','name','price','description','status')->get();
+        $this->columns = $columns ?: ['id', 'name', 'price', 'description', 'status'];
     }
 
-    // HEADINGS
+    public function collection()
+    {
+        return Product::withTrashed()->get();
+    }
+
     public function headings(): array
     {
-        return [
-            'ID',
-            'Name',
-            'Price',
-            'Description',
-            'Status'
-        ];
+        $headings = [];
+        foreach ($this->columns as $column) {
+            $headings[] = ucfirst(str_replace('_', ' ', $column));
+        }
+        return $headings;
+    }
+
+    public function map($product): array
+    {
+        $row = [];
+        foreach ($this->columns as $column) {
+            if ($column == 'status') {
+                $row[] = $product->deleted_at ? 'deleted' : $product->status;
+            } else {
+                $row[] = $product->$column;
+            }
+        }
+        return $row;
     }
 }
